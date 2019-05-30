@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<script>
+    $(function () {
+        $("#accordion").accordion();
+    });
+</script>
+
+<div class="row">
+
+    <div class="container mt-4 mb-4 shadow-lg col-sm-2">
+
+        <br>
+
+        <form class="form-horizontal" action="/fullcontent" method="POST">
+
+            <div class="form-group">
+
+                <label for="body"> <strong> Body </strong> </label>
+
+                <!-- <input type="text" class="form-control" id="body" name="body"> -->
+
+                <select class="form-control" id="body" name="body">
+                    <option value="S/">Security Council</option>
+                    <option value="A/">General Assembly</option>
+                    <option value="E/">Economic and Social Council</option>
+                    <option value="T/">Trusteeship Council</option>
+                </select>
+
+            </div>
+
+            <div class="form-group">
+
+                <label for="session"> <strong> Session </strong> </label>
+
+                <!-- <input type="session" class="form-control" id="session" name="session"> -->
+
+                <select class="form-control" id="session" name="session">
+                    <option value="72">72</option>
+                    <option value="71">71</option>
+                    <option value="70">70</option>
+                    <option value="69">69</option>
+                    <option value="68">68</option>
+                    <option value="67">67</option>
+                    <option value="66">66</option>
+                    <option value="65">65</option>
+                    <option value="64">64</option>
+                    <option value="63">63</option>
+                    <option value="62">62</option>
+                    <option value="61">61</option>
+                    <option value="60">60</option>
+                </select>
+
+
+
+            </div>
+
+            <button id="showresult" value="showresult" type="submit" class="btn btn-default">show result</button>
+
+        </form>
+
+        <br>
+
+    </div>
+
+    <div class="container mt-4 mb-4 shadow-lg col-sm-9">
+
+        <h1> Full Contents <span class="badge badge-pill badge-success"> {{count}} </span> records </h1>
+
+        <h6> Execution Time : {{myTime}} secondes </h6>
+
+        <hr>
+        <div id="accordion">
+            {% for value in record  %}
+
+            <h3>
+                Agenda Subject : <strong>{{ value["subject"] }}</strong>
+            </h3>
+            <div>
+
+                <p> Heading :
+                    <ul>
+                        {% for val in value["heading"] %}
+                        <li><strong>{{ val }}</strong></li>
+                        {% endfor %}
+                    </ul>
+                </p>
+
+                <p> Document Symbol :
+                    <ul>
+                        {% for val in value["docsymbol"] %}
+                        <li><strong>{{ val }}</strong></li>
+                        {% endfor %}
+                    </ul>
+                </p>
+                <p> Link :
+                    <ul>
+                        {% for val in value["link"] %}
+                        <li><a href='{{val}}' target="_blank"> {{val}} </a></li>
+                        {% endfor %}
+                    </ul>
+                </p>
+
+            </div>
+
+
+            {% endfor %}
+        </div>
+
+        <hr>
+
+    </div>
+
+</div>
+{% endblock %}
