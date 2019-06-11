@@ -1,12 +1,28 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<style>
+        #accordion-resizer {
+          padding: 10px;
+          width: 350px;
+          height: 220px;
+        }
+</style>
 <script>
-    $(function () {
-        $("#accordion").accordion();
-    });
+    $( function() {
+        $( "#accordion" ).accordion({
+        heightStyle: "fill"
+        });
+    
+        $( "#accordion-resizer" ).resizable({
+        minHeight: 140,
+        minWidth: 200,
+        resize: function() {
+            $( "#accordion" ).accordion( "refresh" );
+        }
+        });
+    } );
 </script>
-
 <div class="row">
 
     <div class="container mt-4 mb-4 shadow-lg col-sm-2">
@@ -23,9 +39,9 @@
 
                 <select class="form-control" id="body" name="body">
                     <option value="S/">Security Council</option>
-                    <option value="A/">General Assembly</option>
+                    <!--<option value="A/">General Assembly</option>
                     <option value="E/">Economic and Social Council</option>
-                    <option value="T/">Trusteeship Council</option>
+                    <option value="T/">Trusteeship Council</option>-->
                 </select>
 
             </div>
@@ -37,6 +53,7 @@
                 <!-- <input type="session" class="form-control" id="session" name="session"> -->
 
                 <select class="form-control" id="session" name="session">
+                    <option value="Notimplemented">Select </option>
                     <option value="72">72</option>
                     <option value="71">71</option>
                     <option value="70">70</option>
@@ -52,8 +69,6 @@
                     <option value="60">60</option>
                 </select>
 
-
-
             </div>
 
             <button id="showresult" value="showresult" type="submit" class="btn btn-default">show result</button>
@@ -66,51 +81,41 @@
 
     <div class="container mt-4 mb-4 shadow-lg col-sm-9">
 
-        <h1> Full Contents <span class="badge badge-pill badge-success"> {{count}} </span> records </h1>
+        <h1> Full Contents </h1>
+        
+        <h6> Body  : {{myBody}} </h6>
 
-        <h6> Execution Time : {{myTime}} secondes </h6>
+        <h6> Session  : {{mySession}} </h6>
+
+        <h6> Execution Time : {{myTime}} second(s) </h6>
 
         <hr>
-        <div id="accordion">
-            {% for value in record  %}
-
+  
+       <div id="accordion">
+            {% for value in record|groupby('subject')%} 
             <h3>
-                Agenda Subject : <strong>{{ value["subject"] }}</strong>
+                <strong> {{value.grouper}} </strong>
             </h3>
-            <div>
+                <div>
 
-                <p> Heading :
-                    <ul>
-                        {% for val in value["heading"] %}
-                        <li><strong>{{ val }}</strong></li>
-                        {% endfor %}
-                    </ul>
-                </p>
+                {% for val in value.list|sort(attribute='heading')|groupby('heading') %}
 
-                <p> Document Symbol :
-                    <ul>
-                        {% for val in value["docsymbol"] %}
-                        <li><strong>{{ val }}</strong></li>
-                        {% endfor %}
-                    </ul>
-                </p>
-                <p> Link :
-                    <ul>
-                        {% for val in value["link"] %}
-                        <li><a href='{{val}}' target="_blank"> {{val}} </a></li>
-                        {% endfor %}
-                    </ul>
-                </p>
+                <strong>  <span class="text-primary"> >>> {{' '.join(val.grouper)}}  </span></strong>
+                    {% for x in val %}
+                        <ul>
+                            {% for y in x %}
+                                {% for z in y["docsymbol"] %}
+                                <br><span><a href='{{url+ z}}' target="_blank"><strong> * {{z}} </strong></a></span>
+                                {% endfor %} 
+                            {% endfor %}        
+                        </ul>
+                    {% endfor %}
 
-            </div>
-
-
+                {% endfor %}
+      
+                </div>  
             {% endfor %}
         </div>
-
-        <hr>
-
     </div>
-
 </div>
 {% endblock %}

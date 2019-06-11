@@ -99,3 +99,8 @@ footer {
 .footer {
     margin-top: 5%;
 }
+
+p {
+    margin: 0;
+    padding: 0;
+ }

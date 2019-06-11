@@ -13,6 +13,7 @@ import os
 from config import CONSTRING
 import json
 import platform
+from collections import defaultdict
 
 # setting up the parameters
 
@@ -48,8 +49,8 @@ dict_itp_online = {}
 list_itp_online = []
 final_dict = {}
 
-# find the bibs for the session, print them in marc21, and save any found xrefs.
 
+# find the bibs for the session, print them in marc21, and save any found xrefs.
 
 def processITP(body, session, myPath):
 
@@ -73,8 +74,15 @@ def processITP(body, session, myPath):
     for bib in myBib:
         recup = "".join(str(e) for e in bib.get_values('930', 'a'))
         recup1 = "I"
-        if ((recup1 in bib.get_values('991', 'z')) and (recup.startswith("UND"))):
-            myfinalBib.append(bib)
+        found=False
+        for value in bib.get_values('991', 'z'):
+            if str(value).startswith("I") and recup.startswith("UND") and (found==False):
+                myfinalBib.append(bib)
+                found=True   
+        
+        #if ((recup1 in bib.get_values('991', 'z')) and (recup.startswith("UND"))):
+        #    myfinalBib.append(bib)
+        #myfinalBib.append(bib)
 
     # get the global auths records
 
@@ -138,12 +146,22 @@ def getHeader(myList):
 
     return list(recup)
 
+# generate the links
 
 def getLink(myList, myUrl):
     recup = []
     for ml in myList:
         recup.append(myUrl+ml)
     return recup
+
+# filter the symbol according the Body 
+
+def filterSymbol(myList,myBody):
+    goodSymbols=[]
+    for myValue in myList:
+        if myValue.startswith(myBody):
+            goodSymbols.append(myValue)
+    return goodSymbols
 
 ########################################################################################################
 ########################  STEP 02 : PROCESSING   #######################################################
@@ -154,29 +172,38 @@ def getLink(myList, myUrl):
 @app.route("/fullcontent", methods=['POST', 'GET'])
 def fullcontent():
 
-    if request.method == 'POST':
+    if request.method == 'POST' :
 
         # Retrieve the paramaters of the search
+
         initValue()
         myBody, mySession = request.form["body"], request.form["session"]
 
+        # No value inserted
+
+        if mySession=="Notimplemented" : return(render_template('fullcontent.html', record=[], count=0, myTime=0, url="", mySession="Not Defined" , myBody=myBody ))
+
         # Start the counter
+
         startTime = time.time()
 
         # creation of the folder on disk and upload the file selected
-        target = os.path.join(APP_ROOT, "files")
 
+        target = os.path.join(APP_ROOT, "files")
         if not os.path.isdir(target):
             os.mkdir(target)
 
         # Check the existence of the file containing values in the disk
+
         bodsess = myBody+mySession
         fileSession = myBody[0]+mySession+".json"
         print(fileSession)
 
         #  Check the existence of the file containing values in the disk
+
         if platform.system() == "Windows":
             fullPath = '{}\{}'.format(target, fileSession)
+
         else:
             fullPath = '{}/{}'.format(target, fileSession)
 
@@ -185,24 +212,30 @@ def fullcontent():
         print(exists)
 
         if exists:
-
             list_itp_online = []
+
             # Opening the file
+
             print(fullPath)
             with open(fullPath, 'r') as fout:
                 list_itp_online = json.load(fout)
 
             # Stop the counter
+
             endTime = time.time()
 
             # Return the values generated
-            return(render_template('fullcontent.html', record=list_itp_online, count=len(list_itp_online), myTime=round(endTime-startTime), url=URL_BY_DEFAULT))
+
+            return(render_template('fullcontent.html', record=list_itp_online, count=len(list_itp_online), myTime=round(endTime-startTime), url=URL_BY_DEFAULT, mySession=mySession , myBody=myBody ))
 
         else:
+
             # Extract the records
+
             processITP(myBody, mySession, fullPath)
 
             # Load the agenda titles values
+
             for bib in myfinalBib:
                 values = ",".join(bib.get_values("991", "d")).split(",")
                 for value in values:
@@ -211,30 +244,31 @@ def fullcontent():
             record = sorted(list(list_agenda_title))
 
             # Load the other itp_online values
+
             list_itp_online = []
             for bib in myfinalBib:
                 values = ",".join(bib.get_values("991", "d")).split(",")
                 for rec in record:
                     if rec in values:
-                        dict_itp_online["subject"] = rec
-                        dict_itp_online["heading"] = getHeader(
-                            bib.get_values("191", "9"))
-                        dict_itp_online["docsymbol"] = bib.get_values(
-                            "191", "a")
-                        dict_itp_online["link"] = getLink(
-                            bib.get_values("191", "a"), URL_BY_DEFAULT)
+                        dict_itp_online["subject"] = rec.strip()
+                        dict_itp_online["heading"] = getHeader(bib.get_values("191", "9"))
+                        dict_itp_online["docsymbol"] = filterSymbol(bib.get_values("191", "a"),myBody)
+                        dict_itp_online["link"] = getLink(bib.get_values("191", "a"), URL_BY_DEFAULT)
                         list_itp_online.append(dict_itp_online.copy())
                         dict_itp_online.clear()
 
             # Creating a json file with all the information for the next requests
+
             with open(fullPath, 'w+', encoding='utf-8') as fout:
                 json.dump(list_itp_online, fout, sort_keys=True)
 
             # Stop the counter
+
             endTime = time.time()
 
             # Return the values generated
-            return(render_template('fullcontent.html', record=list_itp_online, count=len(list_itp_online), myTime=round(endTime-startTime), url=URL_BY_DEFAULT))
+
+            return(render_template('fullcontent.html', record=list_itp_online, count=len(list_itp_online), myTime=round(endTime-startTime), url=URL_BY_DEFAULT, body=myBody, mySession=mySession , myBody=myBody))
 
     if request.method == 'GET':
         return(render_template('fullcontent.html'))
