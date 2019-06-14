@@ -5,12 +5,12 @@ from requests import get
 import sys
 import codecs
 from dlx import DB, Bib, Auth
-import structure
-import header
+from app import structure
+from app import header
 import re
 import time
 import os
-from config import CONSTRING
+from app.config import CONSTRING
 import json
 import platform
 from collections import defaultdict
